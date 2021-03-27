@@ -5,19 +5,19 @@ cdt_arch:
 cdt_name:
 - cos7
 channel_sources:
-- conda-forge,c4aarch64,defaults
+- conda-forge
 channel_targets:
 - conda-forge main
 cxx_compiler:
 - gxx
 cxx_compiler_version:
-- '7'
+- '9'
 docker_image:
-- condaforge/linux-anvil-aarch64
+- quay.io/condaforge/linux-anvil-aarch64
 expat:
-- '2.2'
+- '2.3'
 openssl:
-- 1.1.1a
+- 1.1.1
 pin_run_as_build:
   expat:
     max_pin: x.x
@@ -25,5 +25,7 @@ pin_run_as_build:
     max_pin: x.x.x
   zlib:
     max_pin: x.x
+target_platform:
+- linux-aarch64
 zlib:
 - '1.2'

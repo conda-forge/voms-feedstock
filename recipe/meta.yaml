@@ -16,7 +16,7 @@ source:
     - 0003-HACK-Add-NI_MAXHOST-and-NI_MAXSERV-for-macOS.patch
 
 build:
-  number: 1
+  number: 2
   skip: True  # [win]
 
 requirements:
@@ -46,7 +46,7 @@ test:
 
 about:
   home: http://italiangrid.github.io/voms/
-  license: Apache 2.0
+  license: Apache-2.0
   license_family: Apache
   license_file: LICENSE
   summary: 'Virtual Organisation Membership Service (C/C++ clients and APIs)'
