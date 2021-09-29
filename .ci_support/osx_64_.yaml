@@ -9,16 +9,14 @@ cxx_compiler:
 cxx_compiler_version:
 - '11'
 expat:
-- '2.3'
+- '2'
+gsoap:
+- 2.8.117
 macos_machine:
 - x86_64-apple-darwin13.4.0
 openssl:
 - 1.1.1
 pin_run_as_build:
-  expat:
-    max_pin: x.x
-  openssl:
-    max_pin: x.x.x
   zlib:
     max_pin: x.x
 target_platform:
