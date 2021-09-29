@@ -3,7 +3,7 @@ About voms
 
 Home: http://italiangrid.github.io/voms/
 
-Package license: Apache 2.0
+Package license: Apache-2.0
 
 Feedstock license: [BSD-3-Clause](https://github.com/conda-forge/voms-feedstock/blob/master/LICENSE.txt)
 
@@ -102,6 +102,7 @@ Installing `voms` from the `conda-forge` channel can be achieved by adding `cond
 
 ```
 conda config --add channels conda-forge
+conda config --set channel_priority strict
 ```
 
 Once the `conda-forge` channel has been enabled, `voms` can be installed with:

@@ -16,7 +16,7 @@ source:
     - 0003-HACK-Add-NI_MAXHOST-and-NI_MAXSERV-for-macOS.patch
 
 build:
-  number: 2
+  number: 3
   skip: True  # [win]
 
 requirements:
