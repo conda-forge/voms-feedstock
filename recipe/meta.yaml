@@ -26,6 +26,7 @@ requirements:
     - libtool
     - make
     - pkg-config
+    - gsoap  # [build_platform != target_platform]
   host:
     - expat
     - gsoap
