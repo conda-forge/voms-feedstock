@@ -13,7 +13,7 @@ docker_image:
 expat:
 - '2'
 gsoap:
-- 2.8.117
+- 2.8.119
 openssl:
 - 1.1.1
 pin_run_as_build:
