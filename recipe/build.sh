@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -eu
 
+if [[ "${build_platform}" == "${target_platform}" ]]; then
+    echo "Cross-compiled builds fail with weird SSL errors"
+    echo "Unfortunately it's not possible to test this failure in CI so we just fail"
+    echo "Hopefully VOMS won't be used too much longer as tokens slowly take over"
+    exit 1
+fi
+
 export LIBS="-lz"
 ./autogen.sh
 
