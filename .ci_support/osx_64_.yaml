@@ -7,11 +7,11 @@ channel_targets:
 cxx_compiler:
 - clangxx
 cxx_compiler_version:
-- '12'
+- '14'
 expat:
 - '2'
 gsoap:
-- 2.8.119
+- 2.8.123
 macos_machine:
 - x86_64-apple-darwin13.4.0
 openssl:
