@@ -1,0 +1,696 @@
+From a4f4ff8bd7cf123f8007fd0d5fa4021c36ed6498 Mon Sep 17 00:00:00 2001
+From: Francesco Giacomini <francesco.giacomini@cnaf.infn.it>
+Date: Sun, 19 Jun 2022 15:26:59 +0200
+Subject: [PATCH 01/10] Remove useless configure checks
+
+The checks define preprocessor macros causing many compilation
+warnings. Moreover the autoconf macros seem incorrect, for they
+swap the two branches of an if; the result was sort-of-ok by chance.
+---
+ configure.ac    |  4 ---
+ m4/acinclude.m4 | 89 -------------------------------------------------
+ 2 files changed, 93 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index 8f9f4e1b..77c73b9c 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -81,12 +81,8 @@ AC_CHECK_FUNCS([alarm atexit dup2 gethostbyaddr gethostname gethostbyname gethos
+ AC_CHECK_DECLS(getopt_data)
+ AC_REPLACE_FUNCS(getopt_long getopt_long_only daemon setenv memset)
+ 
+-TEST_USE_BSD
+-TEST_USE_POSIX
+-
+ # NEW_ISSUES
+ 
+-AC_DEFINE(_SVID_SOURCE, 1, [Get SVID extensions])
+ AC_VOMS_TIME_T_TIMEZONE
+ AM_WITH_DMALLOC
+ 
+diff --git a/m4/acinclude.m4 b/m4/acinclude.m4
+index b67ac1e8..3c349883 100644
+--- a/m4/acinclude.m4
++++ b/m4/acinclude.m4
+@@ -436,95 +436,6 @@ AC_DEFUN([PUT_PRIVATES],
+ #define PUBLIC
+ #endif])])
+ 
+-        
+-AC_DEFUN([TEST_USE_BSD],
+-[
+-    AC_MSG_CHECKING([whether _BSD_SOURCE must be defined])
+-
+-    AC_LANG_PUSH(C)
+-    
+-    cat >conftest.c <<HERE
+-#include <strings.h>
+-char *f(void)
+-{
+-  return strdup("try");
+-}
+-int main(int argc, char **argv) {
+-  (void)f();
+-  return 0;
+-}
+-HERE
+-
+-    if ( ($CC -c -o conftest.o -Wall -ansi -pedantic-errors -Werror conftest.c >/dev/null 2>&1) ); then
+-      AC_MSG_RESULT([no])
+-else
+-  cat >conftest.c <<HERE
+-  #define _BSD_SOURCE
+-  #include <strings.h>
+-  char *f(void)
+-  {
+-    return strdup("try");
+-  }
+-  int main(int argc, char **argv) {
+-    (void)f();
+-    return 0;
+-  }
+-HERE
+-  if ( ($CC -c -o conftest.o -Wall -ansi -pedantic-errors -Werror conftest.c >/dev/null 2>&1) ); then
+-  AC_MSG_RESULT([Needs something else. Let's try and hope])
+-  else
+-  AC_MSG_RESULT([yes])
+-  AC_DEFINE(_BSD_SOURCE, 1, [needed to get ansi functions definitions])
+-  fi
+-fi
+-rm -rf conftest*
+-AC_LANG_POP(C)
+-])
+-
+-AC_DEFUN([TEST_USE_POSIX],
+-[
+-    AC_MSG_CHECKING([wether _POSIX_SOURCE must be defined])
+-
+-    AC_LANG_PUSH(C)
+-
+-cat >conftest.c <<HERE
+-#include <stdio.h>
+-int f(void)
+-{
+-  return fileno(stderr);
+-}
+-int main(int argc, char **argv) {
+-  (void)f();
+-  return 0;
+-}
+-HERE
+-if ( ($CC -c -o conftest.o -Wall -ansi -pedantic-errors -Werror conftest.c >/dev/null 2>&1) ); then
+-AC_MSG_RESULT([no])
+-else
+-  cat >conftest.c <<HERE
+-  #define _POSIX_SOURCE
+-  #include <strings.h>
+-  int f(void)
+-  {
+-    return fileno(stderr);
+-  }
+-  int main(int argc, char **argv) {
+-    (void)f();
+-    return 0;
+-  }
+-HERE
+-  if ( ($CC -c -o conftest.o -Wall -ansi -pedantic-errors -Werror conftest.c >/dev/null 2>&1) ); then
+-  AC_MSG_RESULT([Needs something else. Let's try and hope])
+-  else
+-  AC_MSG_RESULT([yes])
+-  AC_DEFINE(_POSIX_SOURCE, 1, [needed to get ansi functions definitions])
+-  fi
+-fi
+-rm -rf conftest*
+-AC_LANG_POP(C)
+-
+-])
+-
+ AC_DEFUN([AC_TESTSUITE],
+ [
+   AC_ARG_WITH(report-dir,
+
+From 164ccda5481c68f7b30724815e50df3ab650e649 Mon Sep 17 00:00:00 2001
+From: Francesco Giacomini <francesco.giacomini@cnaf.infn.it>
+Date: Sun, 19 Jun 2022 15:32:02 +0200
+Subject: [PATCH 02/10] Fix compilation warning
+
+A literal string cannot be bound to a non-const char pointer. Minimally
+adjust the const-ness of parameters passed to the parse_ga_value
+function.
+---
+ src/utils/vomsfake.cc | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/src/utils/vomsfake.cc b/src/utils/vomsfake.cc
+index 2cf1b23a..f477f1bc 100644
+--- a/src/utils/vomsfake.cc
++++ b/src/utils/vomsfake.cc
+@@ -89,7 +89,7 @@ extern int writeac(const X509 *issuerc, const STACK_OF(X509) *certstack, const X
+ static int time_to_sec(std::string timestring);
+ static long mystrtol(char *number, long int limit);
+ static std::string hextostring(const std::string &data);
+-static int parse_ga_value(char *ga, char **id, char **value, char **qual);
++static int parse_ga_value(char *ga, char **id, char **value, const char **qual);
+ 
+ extern int AC_Init();
+ 
+@@ -398,7 +398,8 @@ Fake::Fake(int argc, char ** argv) :   confile(conf_file_name),
+     int down = 0;
+     for (unsigned int i = 0; i < galist.size(); i++) {
+       char *temp = strdup(galist[i].c_str());
+-      char *id, *value, *qual;
++      char *id, *value;
++      const char *qual;
+       if (parse_ga_value(temp, &id, &value, &qual)) {
+         std::string realga = std::string(qual) + "::" + id + "=" + value;
+         voelem->gas[i] = (char*)strdup((realga.c_str()));
+@@ -541,9 +542,9 @@ bool Fake::Run()
+ 
+ }
+ 
+-static int parse_ga_value(char *ga, char **id, char **value, char **qual)
++static int parse_ga_value(char *ga, char **id, char **value, const char **qual)
+ {
+-  static char *empty="";
++  static const char *empty="";
+   char *eqpoint = strchr(ga, '=');
+   char *qualpoint = strchr(ga, '(');
+   char *qualend = strchr(ga, ')');
+
+From c64f0fbfa5937952604110c63eb32b409dda0495 Mon Sep 17 00:00:00 2001
+From: Francesco Giacomini <francesco.giacomini@cnaf.infn.it>
+Date: Sun, 19 Jun 2022 18:19:44 +0200
+Subject: [PATCH 03/10] Replace RSA_generate_key with RSA_generate_key_ex
+
+RSA_generate_key was deprecated a long time ago. Unfortunately
+RSA_generate_key_ex is also deprecated by OpenSSL 3, but we'll
+manage it together with the other OpenSSL 3 deprecations.
+
+In the process, clean up the callbacks, to make them respect the
+required signature.
+---
+ src/client/vomsclient.cc |  8 +++-----
+ src/include/sslutils.h   |  2 +-
+ src/sslutils/proxy.c     |  7 +++----
+ src/sslutils/sslutils.c  | 44 +++++++++++++++++++++++++++++++---------
+ src/sslutils/vomsproxy.h |  2 +-
+ src/utils/vomsfake.cc    |  8 +++-----
+ 6 files changed, 45 insertions(+), 26 deletions(-)
+
+diff --git a/src/client/vomsclient.cc b/src/client/vomsclient.cc
+index 8bafcf43..3a8aafef 100644
+--- a/src/client/vomsclient.cc
++++ b/src/client/vomsclient.cc
+@@ -121,11 +121,11 @@ static int pwstdin_callback(char * buf, int num, UNUSED(int w))
+   return i;	
+ }
+   
+-static int kpcallback(int p, UNUSED(int n)) 
++static void kpcallback(int p, UNUSED(int n), void*)
+ {
+   char c='B';
+     
+-  if (quiet) return 0;
++  if (quiet) return;
+     
+   if (p == 0) c='.';
+   if (p == 1) c='+';
+@@ -133,8 +133,6 @@ static int kpcallback(int p, UNUSED(int n))
+   if (p == 3) c='\n';
+   if (!debug) c = '.';
+   fputc(c,stderr);
+-
+-  return 0;
+ }
+   
+ extern int proxy_verify_cert_chain(X509 * ucert, STACK_OF(X509) * cert_chain, proxy_verify_desc * pvd);
+@@ -870,7 +868,7 @@ bool Client::CreateProxy(std::string data, AC ** aclist, int version)
+     args->limited       = limit_proxy;
+ 
+     args->voID          = strdup(voID.c_str());
+-    args->callback      = (int (*)())kpcallback;
++    args->callback      = kpcallback;
+     int warn = 0;
+     void *additional = NULL;
+ 
+diff --git a/src/include/sslutils.h b/src/include/sslutils.h
+index 594c14ff..7c155a32 100644
+--- a/src/include/sslutils.h
++++ b/src/include/sslutils.h
+@@ -423,7 +423,7 @@ proxy_genreq(
+     EVP_PKEY **                         pkeyp,
+     int                                 bits,
+     const char *                        newdn,
+-    int                                 (*callback)());
++    void                                (*callback)(int, int, void*));
+ 
+ int
+ proxy_sign(
+diff --git a/src/sslutils/proxy.c b/src/sslutils/proxy.c
+index 31ccc646..5c2d3200 100644
+--- a/src/sslutils/proxy.c
++++ b/src/sslutils/proxy.c
+@@ -128,9 +128,8 @@ int VOMS_WriteProxy(const char *filename, struct VOMSProxy *proxy)
+ }
+ 
+ 
+-static int kpcallback(int UNUSED(p), int UNUSED(n)) 
++static void kpcallback(int UNUSED(p), int UNUSED(n), void*)
+ {
+-  return 0;
+ }
+ 
+ #define SET_EXT(ex)  (!sk_X509_EXTENSION_push(extensions, (ex)) ? \
+@@ -157,7 +156,7 @@ struct VOMSProxy *VOMS_MakeProxy(struct VOMSProxyArguments *args, int *warning,
+   
+   struct VOMSProxy *proxy = NULL;
+ 
+-  int (*cback)();
++  void (*cback)(int, int, void*);
+ 
+   InitProxyCertInfoExtension(1);
+ 
+@@ -172,7 +171,7 @@ struct VOMSProxy *VOMS_MakeProxy(struct VOMSProxyArguments *args, int *warning,
+   if (args->proxyrequest == NULL) {
+     if (proxy_genreq(args->cert, &req, &npkey, args->bits, 
+                      args->newsubject ? args->newsubject : NULL, 
+-                     (int (*)())cback)) {
++                     cback)) {
+       goto err;
+     }
+   } else {
+diff --git a/src/sslutils/sslutils.c b/src/sslutils/sslutils.c
+index ac8038fa..6bac77ea 100644
+--- a/src/sslutils/sslutils.c
++++ b/src/sslutils/sslutils.c
+@@ -701,7 +701,7 @@ proxy_genreq(
+     EVP_PKEY **                         pkeyp,
+     int                                 bits,
+     const char *                        newdn,
+-    int                                 (*callback)())
++    void                                (*callback)(int, int, void*))
+ 
+ {
+     RSA *                               rsa = NULL;
+@@ -711,6 +711,8 @@ proxy_genreq(
+     X509_REQ *                          req = NULL;
+     X509_NAME_ENTRY *                   ne = NULL;
+     int                                 rbits;
++    BIGNUM *                            rsa_exp = NULL;
++    BN_GENCB *                          cb = NULL;
+ 
+     if (bits)
+     {
+@@ -744,15 +746,29 @@ proxy_genreq(
+         goto err;
+     }
+ 
+-    /*
+-     * Note: The cast of the callback function is consistent with
+-     * the declaration of RSA_generate_key() in OpenSSL.  It may
+-     * trigger a warning if you compile with SSLeay.
+-     */
+-    if ((rsa = RSA_generate_key(rbits,
+-                                RSA_F4,
+-                                (void (*)(int,int,void *))callback
+-                                ,NULL)) == NULL)
++    if ((rsa_exp = BN_new()) == NULL || ! BN_set_word(rsa_exp, RSA_F4))
++    {
++        PRXYerr(PRXYERR_F_PROXY_GENREQ,PRXYERR_R_PROCESS_PROXY_KEY);
++        goto err;
++    }
++
++    if ((cb = BN_GENCB_new()) == NULL)
++    {
++        PRXYerr(PRXYERR_F_PROXY_GENREQ,PRXYERR_R_PROCESS_PROXY_KEY);
++        goto err;
++    }
++    BN_GENCB_set_old(cb, callback, NULL);
++
++    if ((rsa = RSA_new()) == NULL) {
++        PRXYerr(PRXYERR_F_PROXY_GENREQ,PRXYERR_R_PROCESS_PROXY_KEY);
++        goto err;
++    }
++
++    if (RSA_generate_key_ex(rsa, rbits, rsa_exp, cb))
++    {
++      BN_free(rsa_exp);
++    }
++    else
+     {
+         PRXYerr(PRXYERR_F_PROXY_GENREQ,PRXYERR_R_PROCESS_PROXY_KEY);
+         goto err;
+@@ -840,6 +856,14 @@ proxy_genreq(
+     if (upkey)
+       EVP_PKEY_free(upkey);
+ 
++    if (rsa_exp)
++    {
++      BN_free(rsa_exp);
++    }
++    if (cb)
++    {
++      BN_GENCB_free(cb);
++    }
+     if(rsa)
+     {
+         RSA_free(rsa);
+diff --git a/src/sslutils/vomsproxy.h b/src/sslutils/vomsproxy.h
+index 5284d183..1980eba4 100644
+--- a/src/sslutils/vomsproxy.h
++++ b/src/sslutils/vomsproxy.h
+@@ -57,7 +57,7 @@ struct VOMSProxyArguments {
+   int             minutes;
+   int             limited;
+   char           *voID;
+-  int (*callback)();
++  void           (*callback)(int, int, void*);
+   STACK_OF(X509_EXTENSION) *extensions;
+   STACK_OF(X509) *chain;
+   int             pastproxy;
+diff --git a/src/utils/vomsfake.cc b/src/utils/vomsfake.cc
+index f477f1bc..9059245e 100644
+--- a/src/utils/vomsfake.cc
++++ b/src/utils/vomsfake.cc
+@@ -128,11 +128,11 @@ static int pwstdin_callback(char * buf, int num, UNUSED(int w))
+   return i;
+ }
+   
+-static int kpcallback(int p, int UNUSED(n)) 
++static void kpcallback(int p, int UNUSED(n), void*)
+ {
+   char c='B';
+     
+-  if (quiet) return 0;
++  if (quiet) return;
+     
+   if (p == 0) c='.';
+   if (p == 1) c='+';
+@@ -140,8 +140,6 @@ static int kpcallback(int p, int UNUSED(n))
+   if (p == 3) c='\n';
+   if (!debug) c = '.';
+   fputc(c,stderr);
+-
+-  return 0;
+ }
+   
+ extern int proxy_verify_cert_chain(X509 * ucert, STACK_OF(X509) * cert_chain, proxy_verify_desc * pvd);
+@@ -618,7 +616,7 @@ bool Fake::CreateProxy(std::string data, AC ** aclist, int version)
+     args->minutes       = 0;
+     args->limited       = limit_proxy;
+     args->voID          = strdup(voID.c_str());
+-    args->callback      = (int (*)())kpcallback;
++    args->callback      = kpcallback;
+     args->pastproxy     = time_to_sec(pastproxy);
+ 
+     if (!keyusage.empty())
+
+From e713b207ab3199b7cff9e2c7c56734559ef207f1 Mon Sep 17 00:00:00 2001
+From: Francesco Giacomini <francesco.giacomini@cnaf.infn.it>
+Date: Sun, 19 Jun 2022 18:37:53 +0200
+Subject: [PATCH 04/10] Name all function parameters in C code
+
+C did not allow unnamed function parameters. For uniformity, do
+the same in similar contexts in C++ code (where it would be allowed).
+
+Note that recent versions of gcc allow unnamed parameters. This is
+probably due to an upgrade of the C standard (to be checked).
+---
+ src/client/vomsclient.cc | 2 +-
+ src/sslutils/proxy.c     | 2 +-
+ src/utils/vomsfake.cc    | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/client/vomsclient.cc b/src/client/vomsclient.cc
+index 3a8aafef..6e5d74f2 100644
+--- a/src/client/vomsclient.cc
++++ b/src/client/vomsclient.cc
+@@ -121,7 +121,7 @@ static int pwstdin_callback(char * buf, int num, UNUSED(int w))
+   return i;	
+ }
+   
+-static void kpcallback(int p, UNUSED(int n), void*)
++static void kpcallback(int p, UNUSED(int n), UNUSED(void* v))
+ {
+   char c='B';
+     
+diff --git a/src/sslutils/proxy.c b/src/sslutils/proxy.c
+index 5c2d3200..8a1e2098 100644
+--- a/src/sslutils/proxy.c
++++ b/src/sslutils/proxy.c
+@@ -128,7 +128,7 @@ int VOMS_WriteProxy(const char *filename, struct VOMSProxy *proxy)
+ }
+ 
+ 
+-static void kpcallback(int UNUSED(p), int UNUSED(n), void*)
++static void kpcallback(int UNUSED(p), int UNUSED(n), UNUSED(void* v))
+ {
+ }
+ 
+diff --git a/src/utils/vomsfake.cc b/src/utils/vomsfake.cc
+index 9059245e..3817bdfe 100644
+--- a/src/utils/vomsfake.cc
++++ b/src/utils/vomsfake.cc
+@@ -128,7 +128,7 @@ static int pwstdin_callback(char * buf, int num, UNUSED(int w))
+   return i;
+ }
+   
+-static void kpcallback(int p, int UNUSED(n), void*)
++static void kpcallback(int p, int UNUSED(n), UNUSED(void* v))
+ {
+   char c='B';
+     
+
+From b01c8e7d826bd8cfff47e42bb0f6fb8cf0014025 Mon Sep 17 00:00:00 2001
+From: Francesco Giacomini <francesco.giacomini@cnaf.infn.it>
+Date: Mon, 20 Jun 2022 10:48:58 +0200
+Subject: [PATCH 05/10] Add BN_GENCB_new/free to the SSL compat layer
+
+The two functions have been introduced only in OpenSSL 1.1.
+Add include guard to the header file.
+---
+ src/include/ssl_compat.h  |  7 +++++++
+ src/sslutils/ssl_compat.c | 10 ++++++++++
+ 2 files changed, 17 insertions(+)
+
+diff --git a/src/include/ssl_compat.h b/src/include/ssl_compat.h
+index ffc69ec8..e1bbaf68 100644
+--- a/src/include/ssl_compat.h
++++ b/src/include/ssl_compat.h
+@@ -1,3 +1,6 @@
++#ifndef VOMS_SSL_COMPAT_H
++#define VOMS_SSL_COMPAT_H
++
+ #include <openssl/opensslv.h>
+ 
+ #if OPENSSL_VERSION_NUMBER < 0x10100000L
+@@ -58,6 +61,8 @@ int (*BIO_meth_get_destroy(BIO_METHOD *biom)) (BIO *);
+ int BIO_meth_set_destroy(BIO_METHOD *biom, int (*destroy) (BIO *));
+ long (*BIO_meth_get_callback_ctrl(BIO_METHOD *biom))(BIO *, int, bio_info_cb *);
+ int BIO_meth_set_callback_ctrl(BIO_METHOD *biom, long (*callback_ctrl) (BIO *, int, bio_info_cb *));
++BN_GENCB *BN_GENCB_new(void);
++void BN_GENCB_free(BN_GENCB *cb);
+ 
+ #if OPENSSL_VERSION_NUMBER < 0x10002000L
+ 
+@@ -72,3 +77,5 @@ void X509_get0_signature(const ASN1_BIT_STRING **psig,
+ #endif
+ 
+ #endif
++
++#endif
+diff --git a/src/sslutils/ssl_compat.c b/src/sslutils/ssl_compat.c
+index fd039e65..576cb9aa 100644
+--- a/src/sslutils/ssl_compat.c
++++ b/src/sslutils/ssl_compat.c
+@@ -342,6 +342,16 @@ int BIO_meth_set_callback_ctrl(BIO_METHOD *biom, long (*callback_ctrl) (BIO *, i
+   return 1;
+ }
+ 
++BN_GENCB *BN_GENCB_new(void)
++{
++  return OPENSSL_malloc(sizeof(BN_GENCB));
++}
++
++void BN_GENCB_free(BN_GENCB *cb)
++{
++  OPENSSL_free(cb);
++}
++
+ #if OPENSSL_VERSION_NUMBER < 0x10002000L
+ 
+ int X509_get_signature_nid(const X509 *x)
+
+From 7e293ba76063563b72099677594767213f37a93b Mon Sep 17 00:00:00 2001
+From: Francesco Giacomini <francesco.giacomini@cnaf.infn.it>
+Date: Mon, 20 Jun 2022 11:23:03 +0200
+Subject: [PATCH 06/10] Build against the OpenSSL 1.1 API
+
+---
+ configure.ac | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index 77c73b9c..0b75342e 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -31,9 +31,7 @@ AC_PROG_YACC
+ AC_PROG_LEX
+ AC_COMPILER
+ 
+-PKG_CHECK_MODULES([OPENSSL], [openssl])
+-# AC_OPENSSL
+-
++PKG_CHECK_MODULES([OPENSSL], [openssl], [AC_DEFINE([OPENSSL_API_COMPAT], [10100], [Build against OpenSSL 1.1 API])])
+ 
+ AC_CHECK_HEADER([expat.h], 
+     [], 
+
+From 4695c25e5f3565cd8d1a8eb988cab9615594abb2 Mon Sep 17 00:00:00 2001
+From: Francesco Giacomini <francesco.giacomini@cnaf.infn.it>
+Date: Mon, 20 Jun 2022 16:22:36 +0200
+Subject: [PATCH 07/10] Remove support for OpenSSL < 1.0.2 in SSL compat layer
+
+---
+ src/include/ssl_compat.h  |  8 --------
+ src/sslutils/ssl_compat.c | 18 ------------------
+ 2 files changed, 26 deletions(-)
+
+diff --git a/src/include/ssl_compat.h b/src/include/ssl_compat.h
+index e1bbaf68..b8bcb3ab 100644
+--- a/src/include/ssl_compat.h
++++ b/src/include/ssl_compat.h
+@@ -64,14 +64,6 @@ int BIO_meth_set_callback_ctrl(BIO_METHOD *biom, long (*callback_ctrl) (BIO *, i
+ BN_GENCB *BN_GENCB_new(void);
+ void BN_GENCB_free(BN_GENCB *cb);
+ 
+-#if OPENSSL_VERSION_NUMBER < 0x10002000L
+-
+-int X509_get_signature_nid(const X509 *x);
+-void X509_get0_signature(const ASN1_BIT_STRING **psig,
+-                         const X509_ALGOR **palg, const X509 *x);
+-
+-#endif
+-
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/src/sslutils/ssl_compat.c b/src/sslutils/ssl_compat.c
+index 576cb9aa..041ea859 100644
+--- a/src/sslutils/ssl_compat.c
++++ b/src/sslutils/ssl_compat.c
+@@ -352,22 +352,4 @@ void BN_GENCB_free(BN_GENCB *cb)
+   OPENSSL_free(cb);
+ }
+ 
+-#if OPENSSL_VERSION_NUMBER < 0x10002000L
+-
+-int X509_get_signature_nid(const X509 *x)
+-{
+-  return OBJ_obj2nid(x->sig_alg->algorithm);
+-}
+-
+-void X509_get0_signature(const ASN1_BIT_STRING **psig,
+-                         const X509_ALGOR **palg, const X509 *x)
+-{
+-  if (psig)
+-    *psig = x->signature;
+-  if (palg)
+-    *palg = x->sig_alg;
+-}
+-
+-#endif
+-
+ #endif
+
+From 82bc76ee3ebe88db82d7e60ee91c40955d7850ea Mon Sep 17 00:00:00 2001
+From: Francesco Giacomini <francesco.giacomini@cnaf.infn.it>
+Date: Mon, 20 Jun 2022 16:28:10 +0200
+Subject: [PATCH 08/10] Manage signature algos more uniformly
+
+---
+ src/ac/write.c | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+
+diff --git a/src/ac/write.c b/src/ac/write.c
+index 8575e951..783118b7 100644
+--- a/src/ac/write.c
++++ b/src/ac/write.c
+@@ -428,11 +428,17 @@ int writeac(X509 *issuerc, STACK_OF(X509) *issuerstack, X509 *holder, EVP_PKEY *
+     }
+   }
+ 
+-  alg1 = X509_ALGOR_dup((X509_ALGOR*)X509_get0_tbs_sigalg(issuerc));
+   {
+-    X509_ALGOR /*const*/* sig_alg;
++    const X509_ALGOR *sig_alg = X509_get0_tbs_sigalg(issuerc);
++    alg1 = X509_ALGOR_dup((X509_ALGOR*)sig_alg); // const_cast
++  }
++  {
++#if OPENSSL_VERSION_NUMBER >= 0x10100000L
++    const
++#endif
++    X509_ALGOR *sig_alg;
+     X509_get0_signature(NULL, &sig_alg, issuerc);
+-    alg2 = X509_ALGOR_dup((X509_ALGOR*)sig_alg);
++    alg2 = X509_ALGOR_dup((X509_ALGOR*)sig_alg); // possibly const_cast
+   }
+ 
+   {
+
+From 8dea18f460ee16d20f87a4bc16cd1805540f35c9 Mon Sep 17 00:00:00 2001
+From: Francesco Giacomini <francesco.giacomini@cnaf.infn.it>
+Date: Mon, 20 Jun 2022 16:29:23 +0200
+Subject: [PATCH 09/10] Replace deprecated function call
+
+---
+ src/sslutils/proxycertinfo.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/sslutils/proxycertinfo.c b/src/sslutils/proxycertinfo.c
+index 89fa222f..7dd26a2f 100644
+--- a/src/sslutils/proxycertinfo.c
++++ b/src/sslutils/proxycertinfo.c
+@@ -24,6 +24,7 @@
+ #include "doio.h"
+ 
+ #include "proxycertinfo.h"
++#include "ssl_compat.h"
+ 
+ typedef PROXY_CERT_INFO_EXTENSION PROXYCERTINFO_OLD;
+ 
+@@ -82,7 +83,7 @@ char* PROXYCERTINFO_OLD_i2s(struct v3_ext_method* method, void* ext)
+ 			   output, 
+ 			   ( dooid ? oid : ""), 
+ 			   ( (pp && pp->policy) ? "\nPolicy Text: " : ""), 
+-         ( (pp && pp->policy) ? (char*)ASN1_STRING_data(pp->policy) : ""),
++         ( (pp && pp->policy) ? (const char*)ASN1_STRING_get0_data(pp->policy) : ""),
+ 			   ( (pp && pp->policy) ? "\n" : ""));
+ 
+   free(output);
+
+From e8e0875195fb874a69a015130aa04cbf50f030e8 Mon Sep 17 00:00:00 2001
+From: Francesco Giacomini <francesco.giacomini@cnaf.infn.it>
+Date: Mon, 20 Jun 2022 16:29:43 +0200
+Subject: [PATCH 10/10] Review flags for compilation with warnings
+
+Do not use -ansi, which can be too strict.
+---
+ m4/acinclude.m4 | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/m4/acinclude.m4 b/m4/acinclude.m4
+index 3c349883..001ff33f 100644
+--- a/m4/acinclude.m4
++++ b/m4/acinclude.m4
+@@ -212,8 +212,8 @@ AC_DEFUN([AC_COMPILER],
+       [ac_with_warnings="no"])
+ 
+     if test "x$ac_with_warnings" = "xyes" ; then
+-      CFLAGS="-g -O0 -Wall -ansi -W $CFLAGS"
+-      CXXFLAGS="-g -O0 -Wall -ansi -W $CXXFLAGS"
++      CFLAGS="$CFLAGS -Wall -Wextra"
++      CXXFLAGS="$CXXFLAGS -Wall -Wextra"
+     fi
+ ])
+ 

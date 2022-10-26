@@ -14,6 +14,7 @@ source:
     - 0001-PATCH-Fix-for-GCC-7.patch
     - 0002-PATCH-wsdl2h-m4-Fix-detection-of-modern-wsdl2h-versions.patch
     - 0003-HACK-Add-NI_MAXHOST-and-NI_MAXSERV-for-macOS.patch
+    - pr-101.patch  # [openssl.startswith("3.")]
 
 build:
   number: 7
