@@ -1,5 +1,5 @@
 {% set name = "voms" %}
-{% set version = "2.1.0rc0" %}
+{% set version = "2.1.0rc2" %}
 
 package:
   name: {{ name|lower }}
@@ -9,12 +9,11 @@ source:
   # Use the release candidate as it's now very old (tagged Jan 2017)
   # Main difference is support for newer OpenSSL versions and would need to be patched regardless
   url: https://github.com/italiangrid/{{ name }}/archive/v{{ version|replace('rc', '-rc') }}.tar.gz
-  sha256: 69ffb09cf71bba2f43bc898b6c28644a75c4471f68331a047d3fafc7a63f9e84
+  sha256: ef9cf0c0dce88be3797062c82ce3df90b86e7bb772d49137b8b1fd8d3a54b7e5
   patches:
-    - 0001-PATCH-Fix-for-GCC-7.patch
-    - 0002-PATCH-wsdl2h-m4-Fix-detection-of-modern-wsdl2h-versions.patch
-    - 0003-HACK-Add-NI_MAXHOST-and-NI_MAXSERV-for-macOS.patch
-    - pr-101.patch  # [openssl.startswith("3.")]
+    - patches/0001-HACK-Add-NI_MAXHOST-and-NI_MAXSERV-for-macOS.patch
+    - patches/0002-Fixes-for-OpenSSL-3.0.0-beta1.patch
+    - patches/0003-Fix-incompatible-pointer-conversion.patch
 
 build:
   number: 7
