@@ -1,22 +1,19 @@
 {% set name = "voms" %}
-{% set version = "2.1.0rc2" %}
+{% set version = "2.1.0rc3" %}
 
 package:
   name: {{ name|lower }}
   version: {{ version }}
 
 source:
-  # Use the release candidate as it's now very old (tagged Jan 2017)
-  # Main difference is support for newer OpenSSL versions and would need to be patched regardless
   url: https://github.com/italiangrid/{{ name }}/archive/v{{ version|replace('rc', '-rc') }}.tar.gz
-  sha256: ef9cf0c0dce88be3797062c82ce3df90b86e7bb772d49137b8b1fd8d3a54b7e5
+  sha256: 4908526865889b7e8af6ff0264cf7f05a42834d71dfd9b01c2318937e826229d
   patches:
     - patches/0001-HACK-Add-NI_MAXHOST-and-NI_MAXSERV-for-macOS.patch
-    - patches/0002-Fixes-for-OpenSSL-3.0.0-beta1.patch
-    - patches/0003-Fix-incompatible-pointer-conversion.patch
+    - patches/0002-Fix-incompatible-pointer-conversion.patch
 
 build:
-  number: 7
+  number: 0
   skip: True  # [win]
 
 requirements:
