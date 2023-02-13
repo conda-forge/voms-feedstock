@@ -1,0 +1,37 @@
+From 6f893e5d61464dff7ba39ac2edf4629866ef0277 Mon Sep 17 00:00:00 2001
+From: Chris Burr <christopher.burr@cern.ch>
+Date: Mon, 13 Feb 2023 14:24:20 +0100
+Subject: [PATCH] Only set authority key identified field if the public key is
+ available
+
+---
+ src/sslutils/proxy.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/src/sslutils/proxy.c b/src/sslutils/proxy.c
+index 8a1e209..d9bc9d2 100644
+--- a/src/sslutils/proxy.c
++++ b/src/sslutils/proxy.c
+@@ -389,14 +389,14 @@ struct VOMSProxy *VOMS_MakeProxy(struct VOMSProxyArguments *args, int *warning,
+       ex11 = X509V3_EXT_conf_nid(NULL, &ctx, NID_authority_key_identifier, "keyid");
+     }
+ 
+-    if (!ex11) {
++    if (ex11) {
++      if (!SET_EXT(ex11)) {
++        goto err;
++      }
++    } else if (args->selfsigned) {
+       PRXYerr(PRXYERR_F_PROXY_SIGN,PRXYERR_R_CLASS_ADD_EXT);
+       goto err;
+     }
+-          
+-    if (!SET_EXT(ex11)) {
+-      goto err;
+-    }
+   }
+ 
+   /* class_add extension */
+-- 
+2.37.1 (Apple Git-137.1)
+
