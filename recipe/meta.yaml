@@ -10,7 +10,6 @@ source:
   sha256: 4908526865889b7e8af6ff0264cf7f05a42834d71dfd9b01c2318937e826229d
   patches:
     - patches/0001-HACK-Add-NI_MAXHOST-and-NI_MAXSERV-for-macOS.patch
-    - patches/0002-Fix-incompatible-pointer-conversion.patch
 
 build:
   number: 0
