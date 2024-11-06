@@ -1,5 +1,5 @@
 {% set name = "voms" %}
-{% set version = "2.1.0rc3" %}
+{% set version = "2.1.0" %}
 
 package:
   name: {{ name|lower }}
@@ -7,18 +7,19 @@ package:
 
 source:
   url: https://github.com/italiangrid/{{ name }}/archive/v{{ version|replace('rc', '-rc') }}.tar.gz
-  sha256: 4908526865889b7e8af6ff0264cf7f05a42834d71dfd9b01c2318937e826229d
+  sha256: 2fd2468620af531c02e9ac495aaaf2a8d5b8cfbe24d4904f2e8fa7f64cdeeeec
   patches:
     - patches/0001-HACK-Add-NI_MAXHOST-and-NI_MAXSERV-for-macOS.patch
     - patches/0002-Only-set-authority-key-identified-field-if-the-publi.patch
 
 build:
   number: 0
-  skip: True  # [win]
+  skip: true  # [win]
 
 requirements:
   build:
     - {{ compiler('cxx') }}
+    - {{ stdlib("c") }}
     - automake
     - libtool
     - make
@@ -50,12 +51,12 @@ about:
   summary: 'Virtual Organisation Membership Service (C/C++ clients and APIs)'
 
   description: |
-     The Virtual Organization Membership Service (VOMS) is an attribute
-     authority which serves as central repository for VO user authorization
-     information, providing support for sorting users into group hierarchies,
-     keeping track of their roles and other attributes in order to issue
-     trusted attribute certificates and SAML assertions used in the Grid
-     environment for authorization purposes.
+    The Virtual Organization Membership Service (VOMS) is an attribute
+    authority which serves as central repository for VO user authorization
+    information, providing support for sorting users into group hierarchies,
+    keeping track of their roles and other attributes in order to issue
+    trusted attribute certificates and SAML assertions used in the Grid
+    environment for authorization purposes.
   doc_url: https://italiangrid.github.io/voms/documentation.html
   dev_url: https://github.com/italiangrid/voms
 
