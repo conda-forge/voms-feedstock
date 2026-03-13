@@ -10,7 +10,6 @@ source:
   sha256: 25748224202586f6eedbdd8f8fc8f7d7647367e50fdadb780839efc65b2cb8b4
   patches:
     - patches/0001-HACK-Add-NI_MAXHOST-and-NI_MAXSERV-for-macOS.patch
-    - patches/0002-Only-set-authority-key-identified-field-if-the-publi.patch
 
 build:
   number: 0
