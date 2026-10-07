@@ -1,5 +1,5 @@
 {% set name = "voms" %}
-{% set version = "2.1.3" %}
+{% set version = "2.1.4" %}
 
 package:
   name: {{ name|lower }}
@@ -7,7 +7,7 @@ package:
 
 source:
   url: https://github.com/italiangrid/{{ name }}/archive/v{{ version|replace('rc', '-rc') }}.tar.gz
-  sha256: 25748224202586f6eedbdd8f8fc8f7d7647367e50fdadb780839efc65b2cb8b4
+  sha256: 8e09d7e5964f905ecd077ddf89a3ebd539bcf62414a27e5b16ec8315c478a294
   patches:
     - patches/0001-HACK-Add-NI_MAXHOST-and-NI_MAXSERV-for-macOS.patch
 
